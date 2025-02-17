@@ -1,0 +1,51 @@
+from collections import Counter
+import heapq
+import math
+
+# Load and preprocess text
+with open('to_build_a_fire.txt', 'r') as file:
+    text = file.read().lower().replace('\n', '')
+
+# Frequency analysis
+freq = Counter(text)
+total_chars = sum(freq.values())
+
+# Probability calculation
+probabilities = {char: count / total_chars for char, count in freq.items()}
+
+# Huffman encoding
+heap = [[weight, [char, ""]] for char, weight in probabilities.items()]
+heapq.heapify(heap)
+
+while len(heap) > 1:
+    lo = heapq.heappop(heap)
+    hi = heapq.heappop(heap)
+    for pair in lo[1:]:
+        pair[1] = '0' + pair[1]
+    for pair in hi[1:]:
+        pair[1] = '1' + pair[1]
+    heapq.heappush(heap, [lo[0] + hi[0]] + lo[1:] + hi[1:])
+
+huffman_codes = sorted(heapq.heappop(heap)[1:], key=lambda p: (len(p[-1]), p))
+
+# Calculate entropy
+entropy = -sum(p * math.log2(p) for p in probabilities.values())
+
+# ASCII encoding
+nascii = total_chars * 8
+
+# Huffman encoding
+avg_bits = sum(probabilities[char] * len(code) for char, code in huffman_codes)
+nhuffman = avg_bits * total_chars
+
+# Compression percentage
+compression = ((nascii - nhuffman) / nascii) * 100
+
+# Output results
+print("Entropy:", entropy)
+print("NASCII:", nascii)
+print("Nhuffman:", nhuffman)
+print("Compression Percentage:", compression)
+print("Huffman Codes:")
+for char, code in huffman_codes:
+    print(f"Symbol: {char}, Codeword: {code}, Length: {len(code)}")
